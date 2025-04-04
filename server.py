@@ -62,10 +62,14 @@ def handle_dialog(req, res):
                 "Не хочу.",
                 "Не буду.",
                 "Отстань!",
-            ]
+            ],
+            'current_animal': 'слон'
         }
         # Заполняем текст ответа
-        res['response']['text'] = 'Привет! Купи слона!'
+        if sessionStorage[user_id]['current_animal'] == 'слон':
+            res['response']['text'] = f'Привет! Купи {sessionStorage[user_id]['current_animal'] + "а"}!'
+        else:
+            res['response']['text'] = f'А теперь купи {sessionStorage[user_id]['current_animal'] + "а"}!'
         # Получим подсказки
         res['response']['buttons'] = get_suggests(user_id)
         return
@@ -75,19 +79,31 @@ def handle_dialog(req, res):
     # В req['request']['original_utterance'] лежит весь текст, что нам прислал пользователь
     # Если он написал 'ладно', 'куплю', 'покупаю', 'хорошо', то мы считаем, что пользователь не согласился.
     # Подумайте, все ли в этом фрагменте написано "красиво"?
-    if req['request']['original_utterance'].lower() in [
+    list_of_words = [
         'ладно',
         'куплю',
         'покупаю',
         'хорошо'
-    ]:
-        # Пользователь согласился, прощаемся.
-        res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
-        res['response']['end_session'] = True
-        return
-
+    ]
+    for word in list_of_words:
+        if word in req['request']['original_utterance'].lower():
+            # Пользователь согласился, прощаемся.
+            res['response'][
+                'text'] = f'{sessionStorage[user_id]['current_animal'].capitalize() + "а"} можно найти на Яндекс.Маркете!'
+            res['response']['end_session'] = True
+            if sessionStorage[user_id]['current_animal'] == 'слон':
+                sessionStorage[user_id] = {
+                    'suggests': [
+                        "Не хочу.",
+                        "Не буду.",
+                        "Отстань!",
+                    ],
+                    'current_animal': 'кролик'
+                }
+            return
     # Если нет, то убеждаем его купить слона!
-    res['response']['text'] = 'Все говорят "%s", а ты купи слона!' % (
+    res['response'][
+        'text'] = f'Все говорят "%s", а ты купи {sessionStorage[user_id]['current_animal'].capitalize() + "а"}!' % (
         req['request']['original_utterance']
     )
     res['response']['buttons'] = get_suggests(user_id)
@@ -112,7 +128,6 @@ def get_suggests(user_id):
     if len(suggests) < 2:
         suggests.append({
             "title": "Ладно",
-            "url": "https://market.yandex.ru/search?text=слон",
             "hide": True
         })
 
